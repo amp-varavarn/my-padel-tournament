@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useCallback } from "react"
-import { Trophy, Coffee, Minus, Plus, Check } from "lucide-react"
+import { ArrowLeft, Trophy, Coffee, Minus, Plus, Check } from "lucide-react"
 import type { Match } from "@/lib/tournament"
 
 interface ActiveRoundProps {
@@ -11,6 +11,7 @@ interface ActiveRoundProps {
   bye: string | null
   onSubmitScores: (results: { score1: number; score2: number }[]) => void
   onViewLeaderboard: () => void
+  onBack: () => void
 }
 
 export function ActiveRound({
@@ -20,6 +21,7 @@ export function ActiveRound({
   bye,
   onSubmitScores,
   onViewLeaderboard,
+  onBack,
 }: ActiveRoundProps) {
   const [scores, setScores] = useState<{ score1: number; score2: number }[]>(
     matches.map(() => ({ score1: 0, score2: 0 }))
@@ -53,13 +55,22 @@ export function ActiveRound({
     <div className="flex min-h-dvh flex-col bg-background">
       {/* Header */}
       <header className="flex items-center justify-between px-6 pt-10 pb-4">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-            Round {roundNumber} of {totalRounds}
-          </p>
-          <h1 className="mt-1 font-serif text-2xl font-semibold tracking-tight text-foreground">
-            Match Scoring
-          </h1>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={onBack}
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-foreground transition-all hover:bg-secondary"
+            aria-label="Back to schedule"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+          <div>
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+              Round {roundNumber} of {totalRounds}
+            </p>
+            <h1 className="mt-1 font-serif text-2xl font-semibold tracking-tight text-foreground">
+              Match Scoring
+            </h1>
+          </div>
         </div>
         <button
           onClick={onViewLeaderboard}
