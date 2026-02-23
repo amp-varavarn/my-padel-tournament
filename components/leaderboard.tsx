@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { RotateCcw, ChevronRight, ChevronDown, ArrowUp } from "lucide-react"
+import { ArrowLeft, RotateCcw, ChevronRight, ChevronDown, ArrowUp } from "lucide-react"
 import type { Player, MatchResult } from "@/lib/tournament"
 
 interface LeaderboardProps {
@@ -12,6 +12,7 @@ interface LeaderboardProps {
   matchHistory: MatchResult[]
   onNextRound: () => void
   onNewTournament: () => void
+  onBack: () => void
 }
 
 export function Leaderboard({
@@ -22,6 +23,7 @@ export function Leaderboard({
   matchHistory,
   onNextRound,
   onNewTournament,
+  onBack,
 }: LeaderboardProps) {
   const sorted = [...players].sort((a, b) => {
     if (b.wins !== a.wins) return b.wins - a.wins
@@ -72,13 +74,22 @@ export function Leaderboard({
   return (
     <div className="flex min-h-dvh flex-col bg-background">
       {/* Header */}
-      <header className="px-6 pt-10 pb-6" ref={leaderboardRef}>
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-          {isFinal ? "Final Standings" : `After Round ${currentRound}`}
-        </p>
-        <h1 className="mt-1 font-serif text-3xl font-semibold tracking-tight text-foreground">
-          {isFinal ? "Champion" : "Leaderboard"}
-        </h1>
+      <header className="flex items-center gap-4 px-6 pt-10 pb-6" ref={leaderboardRef}>
+        <button
+          onClick={onBack}
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border bg-card text-foreground transition-all hover:bg-secondary"
+          aria-label="Back"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </button>
+        <div>
+          <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+            {isFinal ? "Final Standings" : `After Round ${currentRound}`}
+          </p>
+          <h1 className="mt-1 font-serif text-3xl font-semibold tracking-tight text-foreground">
+            {isFinal ? "Champion" : "Leaderboard"}
+          </h1>
+        </div>
       </header>
 
       <main className="flex flex-1 flex-col gap-6 px-6 pb-10">
