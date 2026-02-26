@@ -31,6 +31,54 @@ export interface MatchResult {
 }
 
 /**
+ * Recompute all player stats from scratch based on the full match history.
+ * Used by both server (API) and client to avoid incremental drift.
+ */
+export function recalculateStats(
+  history: MatchResult[],
+  playerList: Player[]
+): Player[] {
+  const updated = playerList.map((p) => ({
+    ...p,
+    wins: 0,
+    losses: 0,
+    gamesFor: 0,
+    gamesAgainst: 0,
+  }))
+
+  history.forEach((entry) => {
+    const team1Won = entry.score1 > entry.score2
+    const isDraw = entry.score1 === entry.score2
+
+    entry.team1.forEach((name) => {
+      const player = updated.find((p) => p.name === name)
+      if (player) {
+        player.gamesFor += entry.score1
+        player.gamesAgainst += entry.score2
+        if (!isDraw) {
+          if (team1Won) player.wins += 1
+          else player.losses += 1
+        }
+      }
+    })
+
+    entry.team2.forEach((name) => {
+      const player = updated.find((p) => p.name === name)
+      if (player) {
+        player.gamesFor += entry.score2
+        player.gamesAgainst += entry.score1
+        if (!isDraw) {
+          if (!team1Won) player.wins += 1
+          else player.losses += 1
+        }
+      }
+    })
+  })
+
+  return updated
+}
+
+/**
  * Rotating-ribbon (circle-method) Individual Americano scheduler.
  *
  * Fix Player 1 in place. The remaining N-1 players sit on a "ribbon" that

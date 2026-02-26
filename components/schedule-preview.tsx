@@ -1,15 +1,23 @@
 "use client"
 
-import { ArrowLeft, Coffee } from "lucide-react"
+import { ArrowLeft, Coffee, RefreshCw } from "lucide-react"
 import type { Round } from "@/lib/tournament"
 
 interface SchedulePreviewProps {
   rounds: Round[]
+  isAdmin: boolean
   onStart: () => void
   onBack: () => void
+  onRefresh?: () => void
 }
 
-export function SchedulePreview({ rounds, onStart, onBack }: SchedulePreviewProps) {
+export function SchedulePreview({
+  rounds,
+  isAdmin,
+  onStart,
+  onBack,
+  onRefresh,
+}: SchedulePreviewProps) {
   return (
     <div className="flex min-h-dvh flex-col bg-background">
       {/* Header */}
@@ -21,7 +29,7 @@ export function SchedulePreview({ rounds, onStart, onBack }: SchedulePreviewProp
         >
           <ArrowLeft className="h-4 w-4" />
         </button>
-        <div>
+        <div className="flex-1">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
             Schedule
           </p>
@@ -29,6 +37,15 @@ export function SchedulePreview({ rounds, onStart, onBack }: SchedulePreviewProp
             {rounds.length} Rounds
           </h1>
         </div>
+        {!isAdmin && onRefresh && (
+          <button
+            onClick={onRefresh}
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-foreground transition-all hover:bg-secondary"
+            aria-label="Refresh"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </button>
+        )}
       </header>
 
       <main className="flex flex-1 flex-col gap-6 px-6 pb-10">
@@ -92,15 +109,25 @@ export function SchedulePreview({ rounds, onStart, onBack }: SchedulePreviewProp
           </section>
         ))}
 
-        {/* Start Button */}
-        <div className="mt-auto pt-4">
-          <button
-            onClick={onStart}
-            className="w-full rounded-2xl bg-primary py-4 text-base font-semibold text-primary-foreground transition-all hover:opacity-90"
-          >
-            Start Tournament
-          </button>
-        </div>
+        {/* Start Button -- Admin only */}
+        {isAdmin && (
+          <div className="mt-auto pt-4">
+            <button
+              onClick={onStart}
+              className="w-full rounded-2xl bg-primary py-4 text-base font-semibold text-primary-foreground transition-all hover:opacity-90"
+            >
+              Start Tournament
+            </button>
+          </div>
+        )}
+
+        {!isAdmin && (
+          <div className="mt-auto pt-4 text-center">
+            <p className="text-xs text-muted-foreground">
+              Waiting for the tournament admin to start...
+            </p>
+          </div>
+        )}
       </main>
     </div>
   )
