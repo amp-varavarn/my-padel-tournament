@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect, useCallback } from "react"
+import { useState, useRef, useEffect } from "react"
 import {
   ArrowLeft,
   RotateCcw,
@@ -8,10 +8,9 @@ import {
   ChevronDown,
   ArrowUp,
   Pencil,
-  Link2,
   RefreshCw,
-  Check,
 } from "lucide-react"
+import { TournamentIdBadge } from "@/components/tournament-id-badge"
 import type { Player, MatchResult } from "@/lib/tournament"
 
 interface LeaderboardProps {
@@ -92,17 +91,6 @@ export function Leaderboard({
     leaderboardRef.current?.scrollIntoView({ behavior: "smooth" })
   }
 
-  // Copy link
-  const [copied, setCopied] = useState(false)
-  const handleCopyLink = useCallback(() => {
-    if (!tournamentId) return
-    const url = `${window.location.origin}/tournament/${tournamentId}`
-    navigator.clipboard.writeText(url).then(() => {
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    })
-  }, [tournamentId])
-
   return (
     <div className="flex min-h-dvh flex-col bg-background">
       {/* Header */}
@@ -124,6 +112,11 @@ export function Leaderboard({
           <h1 className="mt-1 font-serif text-3xl font-semibold tracking-tight text-foreground">
             {isFinal ? "Champion" : "Leaderboard"}
           </h1>
+          {tournamentId && (
+            <div className="mt-1.5">
+              <TournamentIdBadge tournamentId={tournamentId} isAdmin={isAdmin} />
+            </div>
+          )}
         </div>
         {!isAdmin && onRefresh && (
           <button
@@ -235,35 +228,13 @@ export function Leaderboard({
             </button>
           )}
 
-          {/* Copy View-Only Link -- Admin */}
-          {isAdmin && tournamentId && (
-            <button
-              onClick={handleCopyLink}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-border bg-card py-4 text-sm font-medium text-foreground transition-all hover:bg-secondary"
-            >
-              {copied ? (
-                <>
-                  <Check className="h-4 w-4" />
-                  Link Copied
-                </>
-              ) : (
-                <>
-                  <Link2 className="h-4 w-4" />
-                  Copy View-Only Link
-                </>
-              )}
-            </button>
-          )}
-
-          {isAdmin && (
-            <button
-              onClick={onNewTournament}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-border bg-card py-4 text-sm font-medium text-foreground transition-all hover:bg-secondary"
-            >
-              <RotateCcw className="h-4 w-4" />
-              New Tournament
-            </button>
-          )}
+          <button
+            onClick={onNewTournament}
+            className="flex w-full items-center justify-center gap-2 rounded-2xl border border-border bg-card py-4 text-sm font-medium text-foreground transition-all hover:bg-secondary"
+          >
+            <RotateCcw className="h-4 w-4" />
+            New Tournament
+          </button>
         </div>
 
         {/* Round Summaries */}

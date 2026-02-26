@@ -1,11 +1,13 @@
 "use client"
 
 import { ArrowLeft, Coffee, RefreshCw } from "lucide-react"
+import { TournamentIdBadge } from "@/components/tournament-id-badge"
 import type { Round } from "@/lib/tournament"
 
 interface SchedulePreviewProps {
   rounds: Round[]
   isAdmin: boolean
+  tournamentId?: string
   onStart: () => void
   onBack: () => void
   onRefresh?: () => void
@@ -14,6 +16,7 @@ interface SchedulePreviewProps {
 export function SchedulePreview({
   rounds,
   isAdmin,
+  tournamentId,
   onStart,
   onBack,
   onRefresh,
@@ -36,6 +39,11 @@ export function SchedulePreview({
           <h1 className="font-serif text-2xl font-semibold tracking-tight text-foreground">
             {rounds.length} Rounds
           </h1>
+          {tournamentId && (
+            <div className="mt-1.5">
+              <TournamentIdBadge tournamentId={tournamentId} isAdmin={isAdmin} />
+            </div>
+          )}
         </div>
         {!isAdmin && onRefresh && (
           <button

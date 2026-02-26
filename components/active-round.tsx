@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react"
 import { ArrowLeft, Trophy, Coffee, Minus, Plus, Check, RefreshCw } from "lucide-react"
+import { TournamentIdBadge } from "@/components/tournament-id-badge"
 import type { Match } from "@/lib/tournament"
 
 interface ActiveRoundProps {
@@ -10,6 +11,7 @@ interface ActiveRoundProps {
   totalRounds: number
   bye: string | null
   isAdmin: boolean
+  tournamentId?: string
   existingScores?: { score1: number; score2: number }[]
   onSubmitScores: (results: { score1: number; score2: number }[]) => void
   onViewLeaderboard: () => void
@@ -23,6 +25,7 @@ export function ActiveRound({
   totalRounds,
   bye,
   isAdmin,
+  tournamentId,
   existingScores,
   onSubmitScores,
   onViewLeaderboard,
@@ -76,6 +79,11 @@ export function ActiveRound({
             <h1 className="mt-1 font-serif text-2xl font-semibold tracking-tight text-foreground">
               Match Scoring
             </h1>
+            {tournamentId && (
+              <div className="mt-1.5">
+                <TournamentIdBadge tournamentId={tournamentId} isAdmin={isAdmin} />
+              </div>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-2">

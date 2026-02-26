@@ -213,6 +213,7 @@ export default function TournamentPage() {
         totalRounds={rounds.length}
         bye={round.bye}
         isAdmin={true}
+        tournamentId={id}
         existingScores={existingScores}
         onSubmitScores={(results) =>
           handleSubmitScores(results, editingRound)
@@ -231,6 +232,7 @@ export default function TournamentPage() {
       <SchedulePreview
         rounds={rounds}
         isAdmin={isAdmin}
+        tournamentId={id}
         onStart={handleStartTournament}
         onBack={() => (window.location.href = "/")}
         onRefresh={fetchTournament}
@@ -265,6 +267,7 @@ export default function TournamentPage() {
         totalRounds={rounds.length}
         bye={round.bye}
         isAdmin={isAdmin}
+        tournamentId={id}
         existingScores={existingScores}
         onSubmitScores={(results) => handleSubmitScores(results)}
         onViewLeaderboard={async () => {
