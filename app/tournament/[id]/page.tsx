@@ -2,17 +2,17 @@
 
 import { useState, useCallback, useEffect, useRef } from "react"
 import { useParams, useSearchParams } from "next/navigation"
+import { TournamentTabs, type TabId } from "@/components/tournament-tabs"
 import { SchedulePreview } from "@/components/schedule-preview"
 import { ActiveRound } from "@/components/active-round"
 import { Leaderboard } from "@/components/leaderboard"
+import { TournamentIdBadge } from "@/components/tournament-id-badge"
 import { recalculateStats } from "@/lib/tournament"
 import type { Player, Round, MatchResult } from "@/lib/tournament"
 
-type Screen = "schedule" | "active" | "leaderboard"
-
 interface TournamentData {
   id: string
-  screen: Screen
+  screen: "schedule" | "active" | "leaderboard"
   players: Player[]
   rounds: Round[]
   currentRound: number
@@ -29,8 +29,16 @@ export default function TournamentPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
-  // For edit-round flow: which round is being edited (null = normal flow)
+  // Local tab state (derived from server screen, but can be changed locally)
+  const [activeTab, setActiveTab] = useState<TabId>("leaderboard")
+
+  // For edit-round flow
   const [editingRound, setEditingRound] = useState<number | null>(null)
+
+  // Persisted scores across tab switches (admin only)
+  const [draftScores, setDraftScores] = useState<
+    Record<number, { score1: number; score2: number }[]>
+  >({})
 
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
@@ -52,6 +60,15 @@ export default function TournamentPage() {
       const json = await res.json()
       setData(json)
       setError("")
+
+      // Initialize tab based on server state
+      if (json.currentRound === 0) {
+        setActiveTab("rounds")
+      } else if (json.screen === "leaderboard") {
+        setActiveTab("leaderboard")
+      } else {
+        setActiveTab("current")
+      }
     } catch {
       setError("Failed to load tournament")
     } finally {
@@ -94,6 +111,7 @@ export default function TournamentPage() {
 
   const handleStartTournament = useCallback(async () => {
     await patchTournament({ screen: "active", currentRound: 1 })
+    setActiveTab("current")
   }, [patchTournament])
 
   const handleSubmitScores = useCallback(
@@ -129,7 +147,16 @@ export default function TournamentPage() {
         matchHistory: correctedHistory,
         screen: "leaderboard",
       })
+
+      // Clear draft scores for this round
+      setDraftScores((prev) => {
+        const copy = { ...prev }
+        delete copy[roundNum]
+        return copy
+      })
+
       setEditingRound(null)
+      setActiveTab("leaderboard")
     },
     [data, patchTournament]
   )
@@ -140,18 +167,27 @@ export default function TournamentPage() {
       screen: "active",
       currentRound: data.currentRound + 1,
     })
+    setActiveTab("current")
   }, [data, patchTournament])
 
   const handleNewTournament = useCallback(() => {
     window.location.href = "/"
   }, [])
 
-  const handleEditRound = useCallback(
-    (roundNumber: number) => {
-      if (!data) return
-      setEditingRound(roundNumber)
+  const handleEditRound = useCallback((roundNumber: number) => {
+    setEditingRound(roundNumber)
+    setActiveTab("current")
+  }, [])
+
+  // Save draft scores when switching tabs
+  const handleSaveDraftScores = useCallback(
+    (roundNum: number, scores: { score1: number; score2: number }[]) => {
+      setDraftScores((prev) => ({
+        ...prev,
+        [roundNum]: scores,
+      }))
     },
-    [data]
+    []
   )
 
   // --- Render ---
@@ -161,9 +197,7 @@ export default function TournamentPage() {
       <div className="flex min-h-dvh items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          <p className="text-sm text-muted-foreground">
-            Loading tournament...
-          </p>
+          <p className="text-sm text-muted-foreground">Loading tournament...</p>
         </div>
       </div>
     )
@@ -183,126 +217,111 @@ export default function TournamentPage() {
     )
   }
 
-  const { isAdmin, screen, players, rounds, currentRound, matchHistory } = data
-
-  // If editing a past round, show ActiveRound for that round
-  if (editingRound !== null) {
-    const round = rounds[editingRound - 1]
-    if (!round) {
-      setEditingRound(null)
-      return null
-    }
-
-    // Pre-fill with existing scores from match history
-    const existingResults = matchHistory.filter(
-      (e) => e.roundNumber === editingRound
-    )
-    const existingScores = round.matches.map((match) => {
-      const found = existingResults.find(
-        (e) => e.court === match.court
-      )
-      return found
-        ? { score1: found.score1, score2: found.score2 }
-        : { score1: 0, score2: 0 }
-    })
-
-    return (
-      <ActiveRound
-        matches={round.matches}
-        roundNumber={round.roundNumber}
-        totalRounds={rounds.length}
-        bye={round.bye}
-        isAdmin={true}
-        tournamentId={id}
-        existingScores={existingScores}
-        onSubmitScores={(results) =>
-          handleSubmitScores(results, editingRound)
-        }
-        onViewLeaderboard={() => setEditingRound(null)}
-        onBack={() => setEditingRound(null)}
-      />
-    )
-  }
-
-  // Recalculate stats client-side from history for display
+  const { isAdmin, players, rounds, currentRound, matchHistory } = data
+  const hasStarted = currentRound > 0
   const computedPlayers = recalculateStats(matchHistory, players)
 
-  if (screen === "schedule") {
-    return (
-      <SchedulePreview
-        rounds={rounds}
-        isAdmin={isAdmin}
-        tournamentId={id}
-        onStart={handleStartTournament}
-        onBack={() => (window.location.href = "/")}
-        onRefresh={fetchTournament}
-      />
-    )
-  }
+  // Determine which round to show in the "current" tab
+  const displayRound = editingRound ?? currentRound
+  const round = rounds[displayRound - 1]
 
-  if (screen === "active") {
-    const round = rounds[currentRound - 1]
-    if (!round) return null
-
-    // Check if this round already has scores in history (re-entering)
-    const existingResults = matchHistory.filter(
-      (e) => e.roundNumber === round.roundNumber
-    )
-    const existingScores =
-      existingResults.length > 0
-        ? round.matches.map((match) => {
-            const found = existingResults.find(
-              (e) => e.court === match.court
-            )
-            return found
-              ? { score1: found.score1, score2: found.score2 }
-              : { score1: 0, score2: 0 }
-          })
-        : undefined
-
-    return (
-      <ActiveRound
-        matches={round.matches}
-        roundNumber={round.roundNumber}
-        totalRounds={rounds.length}
-        bye={round.bye}
-        isAdmin={isAdmin}
-        tournamentId={id}
-        existingScores={existingScores}
-        onSubmitScores={(results) => handleSubmitScores(results)}
-        onViewLeaderboard={async () => {
-          if (isAdmin) {
-            await patchTournament({ screen: "leaderboard" })
-          }
-        }}
-        onBack={async () => {
-          if (isAdmin) {
-            await patchTournament({ screen: "schedule" })
-          }
-        }}
-        onRefresh={fetchTournament}
-      />
-    )
+  // Get existing or draft scores for this round
+  const getScoresForRound = (roundNum: number) => {
+    if (draftScores[roundNum]) return draftScores[roundNum]
+    const existingResults = matchHistory.filter((e) => e.roundNumber === roundNum)
+    if (existingResults.length > 0) {
+      const r = rounds[roundNum - 1]
+      if (r) {
+        return r.matches.map((match) => {
+          const found = existingResults.find((e) => e.court === match.court)
+          return found
+            ? { score1: found.score1, score2: found.score2 }
+            : { score1: 0, score2: 0 }
+        })
+      }
+    }
+    return undefined
   }
 
   return (
-    <Leaderboard
-      players={computedPlayers}
-      currentRound={currentRound}
-      totalRounds={rounds.length}
-      isFinal={currentRound >= rounds.length}
-      isAdmin={isAdmin}
-      matchHistory={matchHistory}
-      tournamentId={id}
-      onNextRound={handleNextRound}
-      onNewTournament={handleNewTournament}
-      onBack={async () => {
-        if (isAdmin) {
-          await patchTournament({ screen: "active" })
-        }
-      }}
-      onEditRound={isAdmin ? handleEditRound : undefined}
-      onRefresh={fetchTournament}
-    />
+    <div className="flex min-h-dvh flex-col bg-background">
+      {/* Header with ID */}
+      <header className="flex items-center justify-between px-6 pt-6 pb-2">
+        <div className="flex items-center gap-3">
+          <h1 className="font-serif text-xl font-semibold text-foreground">
+            Padel Espresso
+          </h1>
+        </div>
+        <TournamentIdBadge tournamentId={id} isAdmin={isAdmin} />
+      </header>
+
+      {/* Tab Navigation */}
+      <TournamentTabs
+        activeTab={activeTab}
+        onTabChange={(tab) => {
+          // Save current scores before switching
+          if (isAdmin && activeTab === "current" && round && displayRound > 0) {
+            const currentScores = draftScores[displayRound]
+            if (currentScores) {
+              handleSaveDraftScores(displayRound, currentScores)
+            }
+          }
+          setEditingRound(null)
+          setActiveTab(tab)
+        }}
+        currentRound={currentRound}
+        totalRounds={rounds.length}
+        hasStarted={hasStarted}
+      />
+
+      {/* Tab Content */}
+      <div className="flex-1">
+        {activeTab === "leaderboard" && (
+          <Leaderboard
+            players={computedPlayers}
+            currentRound={currentRound}
+            totalRounds={rounds.length}
+            isFinal={currentRound >= rounds.length}
+            isAdmin={isAdmin}
+            matchHistory={matchHistory}
+            onNextRound={handleNextRound}
+            onNewTournament={handleNewTournament}
+            onEditRound={isAdmin ? handleEditRound : undefined}
+          />
+        )}
+
+        {activeTab === "rounds" && (
+          <SchedulePreview
+            rounds={rounds}
+            isAdmin={isAdmin}
+            tournamentId={id}
+            onStart={handleStartTournament}
+            onBack={() => (window.location.href = "/")}
+            onRefresh={fetchTournament}
+          />
+        )}
+
+        {activeTab === "current" && hasStarted && round && (
+          <ActiveRound
+            matches={round.matches}
+            roundNumber={displayRound}
+            totalRounds={rounds.length}
+            bye={round.bye}
+            isAdmin={isAdmin || editingRound !== null}
+            tournamentId={id}
+            existingScores={getScoresForRound(displayRound)}
+            onSubmitScores={(results) => handleSubmitScores(results, editingRound ?? undefined)}
+            onViewLeaderboard={() => setActiveTab("leaderboard")}
+            onBack={() => setActiveTab("rounds")}
+            onRefresh={fetchTournament}
+            onScoresChange={
+              isAdmin
+                ? (scores) => handleSaveDraftScores(displayRound, scores)
+                : undefined
+            }
+          />
+        )}
+      </div>
+    </div>
   )
 }

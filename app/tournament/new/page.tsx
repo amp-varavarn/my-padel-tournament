@@ -11,14 +11,15 @@ export default function NewTournamentPage() {
   const handleGenerate = async (
     players: string[],
     courts: number,
-    _duration: number
+    tournamentDuration: number,
+    matchDuration: number
   ) => {
     setLoading(true)
     try {
       const res = await fetch("/api/tournament", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ players, courts }),
+        body: JSON.stringify({ players, courts, tournamentDuration, matchDuration }),
       })
 
       if (!res.ok) throw new Error("Failed to create tournament")

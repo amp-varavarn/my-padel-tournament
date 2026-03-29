@@ -28,7 +28,7 @@ export default function LandingPage() {
             Padel Tournament Manager
           </p>
           <h1 className="mt-2 font-serif text-4xl font-semibold tracking-tight text-foreground text-balance">
-            Espresso Padel
+            Padel Espresso
           </h1>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground text-pretty">
             Individual Americano format. Rotating partners, live scoring, and

@@ -4,13 +4,14 @@ import { useState } from "react"
 import { Plus, X } from "lucide-react"
 
 interface SetupScreenProps {
-  onGenerate: (players: string[], courts: number, matchDuration: number) => void
+  onGenerate: (players: string[], courts: number, tournamentDuration: number, matchDuration: number) => void
 }
 
 export function SetupScreen({ onGenerate }: SetupScreenProps) {
   const [playerName, setPlayerName] = useState("")
   const [players, setPlayers] = useState<string[]>([])
   const [courts, setCourts] = useState(1)
+  const [tournamentDuration, setTournamentDuration] = useState(60)
   const [matchDuration, setMatchDuration] = useState(10)
 
   const addPlayer = () => {
@@ -43,28 +44,28 @@ export function SetupScreen({ onGenerate }: SetupScreenProps) {
           Tournament Setup
         </p>
         <h1 className="mt-1 font-serif text-3xl font-semibold tracking-tight text-foreground">
-          Espresso Padel
+          Padel Espresso
         </h1>
       </header>
 
       <main className="flex flex-1 flex-col gap-8 px-6 pb-10">
-        {/* Courts */}
+        {/* Tournament Duration */}
         <section>
           <label className="mb-3 block text-xs font-medium uppercase tracking-[0.15em] text-muted-foreground">
-            Number of Courts
+            Tournament Duration
           </label>
           <div className="flex gap-3">
-            {[1, 2, 3, 4].map((c) => (
+            {[45, 60, 90, 120].map((mins) => (
               <button
-                key={c}
-                onClick={() => setCourts(c)}
+                key={mins}
+                onClick={() => setTournamentDuration(mins)}
                 className={`flex h-14 flex-1 items-center justify-center rounded-2xl text-sm font-semibold transition-all ${
-                  courts === c
+                  tournamentDuration === mins
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "bg-card text-foreground border border-border hover:border-foreground/20"
                 }`}
               >
-                {c}
+                {mins >= 60 ? `${mins / 60}h` : `${mins}m`}
               </button>
             ))}
           </div>
@@ -87,6 +88,28 @@ export function SetupScreen({ onGenerate }: SetupScreenProps) {
                 }`}
               >
                 {mins} min
+              </button>
+            ))}
+          </div>
+        </section>
+
+        {/* Courts */}
+        <section>
+          <label className="mb-3 block text-xs font-medium uppercase tracking-[0.15em] text-muted-foreground">
+            Number of Courts
+          </label>
+          <div className="flex gap-3">
+            {[1, 2, 3, 4].map((c) => (
+              <button
+                key={c}
+                onClick={() => setCourts(c)}
+                className={`flex h-14 flex-1 items-center justify-center rounded-2xl text-sm font-semibold transition-all ${
+                  courts === c
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "bg-card text-foreground border border-border hover:border-foreground/20"
+                }`}
+              >
+                {c}
               </button>
             ))}
           </div>
@@ -166,7 +189,7 @@ export function SetupScreen({ onGenerate }: SetupScreenProps) {
         {/* Generate Button */}
         <div className="pt-2">
           <button
-            onClick={() => onGenerate(players, courts, matchDuration)}
+            onClick={() => onGenerate(players, courts, tournamentDuration, matchDuration)}
             disabled={!canGenerate}
             className="w-full rounded-2xl bg-primary py-4 text-base font-semibold text-primary-foreground transition-all hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed"
           >
