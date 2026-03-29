@@ -119,15 +119,14 @@ export function Leaderboard({
 
         {/* Rankings Table */}
         <div className="rounded-2xl bg-card border border-border overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-3 border-b border-border">
-            <div className="grid grid-cols-[2.5rem_1fr_3rem_3rem_3rem_3.5rem] flex-1 items-center gap-1 text-[10px] font-medium uppercase tracking-[0.15em] text-muted-foreground">
-              <span>#</span>
-              <span>Player</span>
-              <span className="text-center">W</span>
-              <span className="text-center">L</span>
-              <span className="text-center">GW</span>
-              <span className="text-center">+/-</span>
-            </div>
+          {/* Header Row - same grid as data rows */}
+          <div className="grid grid-cols-[2.5rem_1fr_2.5rem_2.5rem_2.5rem_2.5rem_2rem] items-center px-5 py-3 border-b border-border text-[10px] font-medium uppercase tracking-[0.15em] text-muted-foreground">
+            <span className="text-center">#</span>
+            <span className="min-w-0">Player</span>
+            <span className="text-center">W</span>
+            <span className="text-center">L</span>
+            <span className="text-center">GW</span>
+            <span className="text-center">+/-</span>
             <button
               onClick={() => setShowLegend(!showLegend)}
               className="flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
@@ -150,6 +149,7 @@ export function Leaderboard({
             </div>
           )}
 
+          {/* Data Rows - same grid as header */}
           {sorted.map((player, idx) => {
             const diff = player.gamesFor - player.gamesAgainst
             const isFirst = idx === 0
@@ -157,22 +157,24 @@ export function Leaderboard({
             return (
               <div
                 key={player.name}
-                className={`grid grid-cols-[2.5rem_1fr_3rem_3rem_3rem_3.5rem] items-center gap-1 px-5 py-3.5 text-sm ${
+                className={`grid grid-cols-[2.5rem_1fr_2.5rem_2.5rem_2.5rem_2.5rem_2rem] items-center px-5 py-3.5 text-sm ${
                   idx !== sorted.length - 1 ? "border-b border-border" : ""
                 }`}
               >
-                <span
-                  className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold ${
-                    idx < 3
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-secondary text-muted-foreground"
-                  }`}
-                >
-                  {idx + 1}
+                <span className="flex justify-center">
+                  <span
+                    className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold ${
+                      idx < 3
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-secondary text-muted-foreground"
+                    }`}
+                  >
+                    {idx + 1}
+                  </span>
                 </span>
 
                 <span
-                  className={`font-medium truncate ${
+                  className={`font-medium truncate min-w-0 ${
                     isFirst ? "text-foreground" : "text-foreground/80"
                   }`}
                 >
@@ -202,6 +204,9 @@ export function Leaderboard({
                 >
                   {diff > 0 ? `+${diff}` : diff}
                 </span>
+
+                {/* Empty cell to match header's help icon column */}
+                <span></span>
               </div>
             )
           })}
