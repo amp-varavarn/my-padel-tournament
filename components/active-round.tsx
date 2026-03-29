@@ -1,8 +1,7 @@
 "use client"
 
 import { useState, useCallback } from "react"
-import { ArrowLeft, Trophy, Coffee, Minus, Plus, Check, RefreshCw } from "lucide-react"
-import { TournamentIdBadge } from "@/components/tournament-id-badge"
+import { Coffee, Minus, Plus, Check } from "lucide-react"
 import type { Match } from "@/lib/tournament"
 
 interface ActiveRoundProps {
@@ -17,6 +16,7 @@ interface ActiveRoundProps {
   onViewLeaderboard: () => void
   onBack: () => void
   onRefresh?: () => void
+  onScoresChange?: (scores: { score1: number; score2: number }[]) => void
 }
 
 export function ActiveRound({
@@ -25,12 +25,9 @@ export function ActiveRound({
   totalRounds,
   bye,
   isAdmin,
-  tournamentId,
   existingScores,
   onSubmitScores,
-  onViewLeaderboard,
-  onBack,
-  onRefresh,
+  onScoresChange,
 }: ActiveRoundProps) {
   const [scores, setScores] = useState<{ score1: number; score2: number }[]>(
     existingScores ?? matches.map(() => ({ score1: 0, score2: 0 }))
@@ -44,10 +41,11 @@ export function ActiveRound({
         const current = copy[matchIdx][team]
         const newVal = Math.max(0, current + delta)
         copy[matchIdx] = { ...copy[matchIdx], [team]: newVal }
+        onScoresChange?.(copy)
         return copy
       })
     },
-    []
+    [onScoresChange]
   )
 
   const allFilled = scores.every((s) => s.score1 > 0 || s.score2 > 0)
@@ -61,52 +59,18 @@ export function ActiveRound({
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-background">
-      {/* Header */}
-      <header className="flex items-center justify-between px-6 pt-10 pb-4">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={onBack}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-foreground transition-all hover:bg-secondary"
-            aria-label="Back"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </button>
-          <div>
-            <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-              Round {roundNumber} of {totalRounds}
-            </p>
-            <h1 className="mt-1 font-serif text-2xl font-semibold tracking-tight text-foreground">
-              Match Scoring
-            </h1>
-            {tournamentId && (
-              <div className="mt-1.5">
-                <TournamentIdBadge tournamentId={tournamentId} isAdmin={isAdmin} />
-              </div>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {!isAdmin && onRefresh && (
-            <button
-              onClick={onRefresh}
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-foreground transition-all hover:bg-secondary"
-              aria-label="Refresh"
-            >
-              <RefreshCw className="h-4 w-4" />
-            </button>
-          )}
-          <button
-            onClick={onViewLeaderboard}
-            className="flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2.5 text-xs font-medium text-foreground transition-all hover:bg-secondary"
-          >
-            <Trophy className="h-3.5 w-3.5" />
-            Standings
-          </button>
-        </div>
+    <div className="flex flex-col bg-background">
+      {/* Section Header */}
+      <header className="px-6 pt-6 pb-4">
+        <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+          Round {roundNumber} of {totalRounds}
+        </p>
+        <h2 className="mt-1 font-serif text-2xl font-semibold tracking-tight text-foreground">
+          Match Scoring
+        </h2>
       </header>
 
-      <main className="flex flex-1 flex-col gap-5 px-6 pb-10">
+      <main className="flex flex-col gap-5 px-6 pb-10">
         {/* Bye notice */}
         {bye && (
           <div className="flex items-center gap-3 rounded-2xl bg-secondary px-5 py-3.5">

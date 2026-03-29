@@ -1,7 +1,6 @@
 "use client"
 
-import { ArrowLeft, Coffee, RefreshCw } from "lucide-react"
-import { TournamentIdBadge } from "@/components/tournament-id-badge"
+import { Coffee } from "lucide-react"
 import type { Round } from "@/lib/tournament"
 
 interface SchedulePreviewProps {
@@ -16,47 +15,21 @@ interface SchedulePreviewProps {
 export function SchedulePreview({
   rounds,
   isAdmin,
-  tournamentId,
   onStart,
-  onBack,
-  onRefresh,
 }: SchedulePreviewProps) {
   return (
-    <div className="flex min-h-dvh flex-col bg-background">
-      {/* Header */}
-      <header className="flex items-center gap-4 px-6 pt-10 pb-6">
-        <button
-          onClick={onBack}
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-foreground transition-all hover:bg-secondary"
-          aria-label="Back to setup"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </button>
-        <div className="flex-1">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-            Schedule
-          </p>
-          <h1 className="font-serif text-2xl font-semibold tracking-tight text-foreground">
-            {rounds.length} Rounds
-          </h1>
-          {tournamentId && (
-            <div className="mt-1.5">
-              <TournamentIdBadge tournamentId={tournamentId} isAdmin={isAdmin} />
-            </div>
-          )}
-        </div>
-        {!isAdmin && onRefresh && (
-          <button
-            onClick={onRefresh}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-foreground transition-all hover:bg-secondary"
-            aria-label="Refresh"
-          >
-            <RefreshCw className="h-4 w-4" />
-          </button>
-        )}
+    <div className="flex flex-col bg-background">
+      {/* Section Header */}
+      <header className="px-6 pt-6 pb-4">
+        <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+          Schedule
+        </p>
+        <h2 className="mt-1 font-serif text-2xl font-semibold tracking-tight text-foreground">
+          {rounds.length} Rounds
+        </h2>
       </header>
 
-      <main className="flex flex-1 flex-col gap-6 px-6 pb-10">
+      <main className="flex flex-col gap-6 px-6 pb-10">
         {rounds.map((round) => (
           <section key={round.roundNumber}>
             {/* Round header */}

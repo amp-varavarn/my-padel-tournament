@@ -7,7 +7,7 @@ const _dmSans = DM_Sans({ subsets: ["latin"], weight: ["300", "400", "500", "600
 const _playfair = Playfair_Display({ subsets: ["latin"], weight: ["400", "500", "600", "700"] })
 
 export const metadata: Metadata = {
-  title: 'Espresso Padel - Tournament Manager',
+  title: 'Padel Espresso - Tournament Manager',
   description: 'Elegant individual Americano padel tournament manager. Rotate partners, track scores, and crown the champion.',
   generator: 'v0.app',
   icons: {

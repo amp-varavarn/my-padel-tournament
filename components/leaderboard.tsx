@@ -2,15 +2,13 @@
 
 import { useState, useRef, useEffect } from "react"
 import {
-  ArrowLeft,
   RotateCcw,
   ChevronRight,
   ChevronDown,
   ArrowUp,
   Pencil,
-  RefreshCw,
+  HelpCircle,
 } from "lucide-react"
-import { TournamentIdBadge } from "@/components/tournament-id-badge"
 import type { Player, MatchResult } from "@/lib/tournament"
 
 interface LeaderboardProps {
@@ -20,12 +18,9 @@ interface LeaderboardProps {
   isFinal: boolean
   isAdmin: boolean
   matchHistory: MatchResult[]
-  tournamentId?: string
   onNextRound: () => void
   onNewTournament: () => void
-  onBack: () => void
   onEditRound?: (roundNumber: number) => void
-  onRefresh?: () => void
 }
 
 export function Leaderboard({
@@ -35,12 +30,9 @@ export function Leaderboard({
   isFinal,
   isAdmin,
   matchHistory,
-  tournamentId,
   onNextRound,
   onNewTournament,
-  onBack,
   onEditRound,
-  onRefresh,
 }: LeaderboardProps) {
   const sorted = [...players].sort((a, b) => {
     if (b.wins !== a.wins) return b.wins - a.wins
@@ -62,6 +54,9 @@ export function Leaderboard({
   const roundNumbers = Object.keys(roundGroups)
     .map(Number)
     .sort((a, b) => b - a)
+
+  // Legend visibility
+  const [showLegend, setShowLegend] = useState(false)
 
   // Accordion state
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
@@ -92,41 +87,15 @@ export function Leaderboard({
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-background">
-      {/* Header */}
-      <header
-        className="flex items-center gap-4 px-6 pt-10 pb-6"
-        ref={leaderboardRef}
-      >
-        <button
-          onClick={onBack}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border bg-card text-foreground transition-all hover:bg-secondary"
-          aria-label="Back"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </button>
-        <div className="flex-1">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-            {isFinal ? "Final Standings" : `After Round ${currentRound}`}
-          </p>
-          <h1 className="mt-1 font-serif text-3xl font-semibold tracking-tight text-foreground">
-            {isFinal ? "Champion" : "Leaderboard"}
-          </h1>
-          {tournamentId && (
-            <div className="mt-1.5">
-              <TournamentIdBadge tournamentId={tournamentId} isAdmin={isAdmin} />
-            </div>
-          )}
-        </div>
-        {!isAdmin && onRefresh && (
-          <button
-            onClick={onRefresh}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-foreground transition-all hover:bg-secondary"
-            aria-label="Refresh"
-          >
-            <RefreshCw className="h-4 w-4" />
-          </button>
-        )}
+    <div className="flex flex-col bg-background">
+      {/* Section Header */}
+      <header className="px-6 pt-6 pb-4" ref={leaderboardRef}>
+        <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+          {isFinal ? "Final Standings" : `After Round ${currentRound}`}
+        </p>
+        <h2 className="mt-1 font-serif text-2xl font-semibold tracking-tight text-foreground">
+          {isFinal ? "Champion" : "Leaderboard"}
+        </h2>
       </header>
 
       <main className="flex flex-1 flex-col gap-6 px-6 pb-10">
@@ -150,14 +119,36 @@ export function Leaderboard({
 
         {/* Rankings Table */}
         <div className="rounded-2xl bg-card border border-border overflow-hidden">
-          <div className="grid grid-cols-[2.5rem_1fr_3rem_3rem_3rem_3.5rem] items-center gap-1 px-5 py-3 text-[10px] font-medium uppercase tracking-[0.15em] text-muted-foreground border-b border-border">
-            <span>#</span>
-            <span>Player</span>
-            <span className="text-center">W</span>
-            <span className="text-center">L</span>
-            <span className="text-center">GW</span>
-            <span className="text-center">+/-</span>
+          <div className="flex items-center justify-between px-5 py-3 border-b border-border">
+            <div className="grid grid-cols-[2.5rem_1fr_3rem_3rem_3rem_3.5rem] flex-1 items-center gap-1 text-[10px] font-medium uppercase tracking-[0.15em] text-muted-foreground">
+              <span>#</span>
+              <span>Player</span>
+              <span className="text-center">W</span>
+              <span className="text-center">L</span>
+              <span className="text-center">GW</span>
+              <span className="text-center">+/-</span>
+            </div>
+            <button
+              onClick={() => setShowLegend(!showLegend)}
+              className="flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              aria-label="Show legend"
+            >
+              <HelpCircle className="h-3.5 w-3.5" />
+            </button>
           </div>
+
+          {/* Collapsible Legend */}
+          {showLegend && (
+            <div className="border-b border-border bg-secondary/30 px-5 py-3">
+              <div className="grid gap-2 text-xs text-muted-foreground">
+                <p><span className="font-semibold text-foreground">W</span> = Match Wins (primary ranking)</p>
+                <p><span className="font-semibold text-foreground">L</span> = Match Losses</p>
+                <p><span className="font-semibold text-foreground">GW</span> = Games Won</p>
+                <p><span className="font-semibold text-foreground">+/-</span> = Game Difference (1st tiebreaker)</p>
+                <p className="mt-1 text-[11px] italic">Ranking: Wins, then Game Diff, then Games Won</p>
+              </div>
+            </div>
+          )}
 
           {sorted.map((player, idx) => {
             const diff = player.gamesFor - player.gamesAgainst
