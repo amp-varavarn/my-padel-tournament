@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Plus, X } from "lucide-react"
 
 interface SetupScreenProps {
-  onGenerate: (players: string[], courts: number, tournamentDuration: number, matchDuration: number, bufferTime: number) => void
+  onGenerate: (players: string[], courts: number, tournamentDuration: number, matchDuration: number) => void
 }
 
 export function SetupScreen({ onGenerate }: SetupScreenProps) {
@@ -13,7 +13,6 @@ export function SetupScreen({ onGenerate }: SetupScreenProps) {
   const [courts, setCourts] = useState(1)
   const [tournamentDuration, setTournamentDuration] = useState(60)
   const [matchDuration, setMatchDuration] = useState(10)
-  const [bufferTime, setBufferTime] = useState(5)
 
   const addPlayer = () => {
     const trimmed = playerName.trim()
@@ -36,6 +35,10 @@ export function SetupScreen({ onGenerate }: SetupScreenProps) {
 
   const canGenerate = players.length >= 4
   const isOdd = players.length % 2 !== 0 && players.length >= 4
+  
+  // Calculate expected rounds based on time settings
+  const BUFFER_TIME = 2
+  const expectedRounds = Math.floor(tournamentDuration / (matchDuration + BUFFER_TIME))
 
   return (
     <div className="flex min-h-dvh flex-col bg-background">
@@ -84,28 +87,6 @@ export function SetupScreen({ onGenerate }: SetupScreenProps) {
                 onClick={() => setMatchDuration(mins)}
                 className={`flex h-14 flex-1 items-center justify-center rounded-2xl text-sm font-semibold transition-all ${
                   matchDuration === mins
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "bg-card text-foreground border border-border hover:border-foreground/20"
-                }`}
-              >
-                {mins} min
-              </button>
-            ))}
-          </div>
-        </section>
-
-        {/* Buffer Time */}
-        <section>
-          <label className="mb-3 block text-xs font-medium uppercase tracking-[0.15em] text-muted-foreground">
-            Break Between Rounds
-          </label>
-          <div className="flex gap-3">
-            {[3, 5, 7, 10].map((mins) => (
-              <button
-                key={mins}
-                onClick={() => setBufferTime(mins)}
-                className={`flex h-14 flex-1 items-center justify-center rounded-2xl text-sm font-semibold transition-all ${
-                  bufferTime === mins
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "bg-card text-foreground border border-border hover:border-foreground/20"
                 }`}
@@ -209,14 +190,26 @@ export function SetupScreen({ onGenerate }: SetupScreenProps) {
           )}
         </section>
 
+        {/* Rounds Preview */}
+        {canGenerate && (
+          <div className="rounded-2xl border border-border bg-card/50 px-5 py-4 text-center">
+            <p className="text-sm text-muted-foreground">
+              This will generate <span className="font-semibold text-foreground">{expectedRounds} rounds</span> based on your time settings
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {tournamentDuration >= 60 ? `${tournamentDuration / 60}h` : `${tournamentDuration}m`} total / {matchDuration}m match + 2m break = {matchDuration + 2}m per round
+            </p>
+          </div>
+        )}
+
         {/* Generate Button */}
         <div className="pt-2">
           <button
-            onClick={() => onGenerate(players, courts, tournamentDuration, matchDuration, bufferTime)}
+            onClick={() => onGenerate(players, courts, tournamentDuration, matchDuration)}
             disabled={!canGenerate}
             className="w-full rounded-2xl bg-primary py-4 text-base font-semibold text-primary-foreground transition-all hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed"
           >
-            {canGenerate ? "Generate Schedule" : `Add ${4 - players.length} more player${4 - players.length !== 1 ? "s" : ""}`}
+            {canGenerate ? "Create Tournament" : `Add ${4 - players.length} more player${4 - players.length !== 1 ? "s" : ""}`}
           </button>
         </div>
       </main>

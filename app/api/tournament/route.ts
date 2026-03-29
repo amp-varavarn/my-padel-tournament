@@ -7,12 +7,11 @@ import type { Player } from "@/lib/tournament"
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { players: playerNames, courts, tournamentDuration, matchDuration, bufferTime } = body as {
+    const { players: playerNames, courts, tournamentDuration, matchDuration } = body as {
       players: string[]
       courts: number
       tournamentDuration: number
       matchDuration: number
-      bufferTime: number
     }
 
     if (!playerNames || playerNames.length < 4) {
@@ -33,13 +32,13 @@ export async function POST(request: Request) {
       gamesAgainst: 0,
     }))
 
-    // Generate all possible rounds, then cap to what fits in tournament duration
-    const allRounds = generateFullSchedule(playerNames, courts)
+    // Calculate total slots with 2-minute buffer between rounds
+    const BUFFER_TIME = 2
+    const roundCycleTime = matchDuration + BUFFER_TIME
+    const totalSlots = Math.floor(tournamentDuration / roundCycleTime)
     
-    // Calculate max rounds accounting for buffer time between rounds
-    const roundCycleTime = matchDuration + bufferTime
-    const maxRounds = Math.floor(tournamentDuration / roundCycleTime)
-    const rounds = allRounds.slice(0, maxRounds)
+    // Generate rounds to fill all available slots
+    const rounds = generateFullSchedule(playerNames, courts, totalSlots)
 
     const tournament = {
       id,
@@ -51,7 +50,6 @@ export async function POST(request: Request) {
       matchHistory: [],
       tournamentDuration,
       matchDuration,
-      bufferTime,
       createdAt: Date.now(),
     }
 
