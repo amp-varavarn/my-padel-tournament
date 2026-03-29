@@ -12,14 +12,15 @@ export default function NewTournamentPage() {
     players: string[],
     courts: number,
     tournamentDuration: number,
-    matchDuration: number
+    matchDuration: number,
+    bufferTime: number
   ) => {
     setLoading(true)
     try {
       const res = await fetch("/api/tournament", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ players, courts, tournamentDuration, matchDuration }),
+        body: JSON.stringify({ players, courts, tournamentDuration, matchDuration, bufferTime }),
       })
 
       if (!res.ok) throw new Error("Failed to create tournament")

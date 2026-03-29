@@ -7,17 +7,15 @@ import type { Player } from "@/lib/tournament"
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    console.log("[v0] POST /api/tournament body:", body)
-    
-    const { players: playerNames, courts, tournamentDuration, matchDuration } = body as {
+    const { players: playerNames, courts, tournamentDuration, matchDuration, bufferTime } = body as {
       players: string[]
       courts: number
       tournamentDuration: number
       matchDuration: number
+      bufferTime: number
     }
 
     if (!playerNames || playerNames.length < 4) {
-      console.log("[v0] Not enough players:", playerNames?.length)
       return NextResponse.json(
         { error: "At least 4 players required" },
         { status: 400 }
@@ -26,7 +24,6 @@ export async function POST(request: Request) {
 
     const id = nanoid(10)
     const adminSecret = nanoid(24)
-    console.log("[v0] Generated id:", id)
 
     const playerObjects: Player[] = playerNames.map((name: string) => ({
       name,
@@ -37,13 +34,12 @@ export async function POST(request: Request) {
     }))
 
     // Generate all possible rounds, then cap to what fits in tournament duration
-    console.log("[v0] Generating schedule for", playerNames.length, "players,", courts, "courts")
     const allRounds = generateFullSchedule(playerNames, courts)
-    console.log("[v0] Generated", allRounds.length, "rounds")
     
-    const maxRounds = Math.floor(tournamentDuration / matchDuration)
+    // Calculate max rounds accounting for buffer time between rounds
+    const roundCycleTime = matchDuration + bufferTime
+    const maxRounds = Math.floor(tournamentDuration / roundCycleTime)
     const rounds = allRounds.slice(0, maxRounds)
-    console.log("[v0] Capped to", rounds.length, "rounds (max:", maxRounds, ")")
 
     const tournament = {
       id,
@@ -55,16 +51,14 @@ export async function POST(request: Request) {
       matchHistory: [],
       tournamentDuration,
       matchDuration,
+      bufferTime,
       createdAt: Date.now(),
     }
 
-    console.log("[v0] Saving tournament to Redis...")
     await saveTournament(tournament)
-    console.log("[v0] Tournament saved successfully")
 
     return NextResponse.json({ id, adminSecret })
-  } catch (err) {
-    console.error("[v0] Error creating tournament:", err)
+  } catch {
     return NextResponse.json(
       { error: "Failed to create tournament" },
       { status: 500 }

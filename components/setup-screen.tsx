@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Plus, X } from "lucide-react"
 
 interface SetupScreenProps {
-  onGenerate: (players: string[], courts: number, tournamentDuration: number, matchDuration: number) => void
+  onGenerate: (players: string[], courts: number, tournamentDuration: number, matchDuration: number, bufferTime: number) => void
 }
 
 export function SetupScreen({ onGenerate }: SetupScreenProps) {
@@ -13,6 +13,7 @@ export function SetupScreen({ onGenerate }: SetupScreenProps) {
   const [courts, setCourts] = useState(1)
   const [tournamentDuration, setTournamentDuration] = useState(60)
   const [matchDuration, setMatchDuration] = useState(10)
+  const [bufferTime, setBufferTime] = useState(5)
 
   const addPlayer = () => {
     const trimmed = playerName.trim()
@@ -83,6 +84,28 @@ export function SetupScreen({ onGenerate }: SetupScreenProps) {
                 onClick={() => setMatchDuration(mins)}
                 className={`flex h-14 flex-1 items-center justify-center rounded-2xl text-sm font-semibold transition-all ${
                   matchDuration === mins
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "bg-card text-foreground border border-border hover:border-foreground/20"
+                }`}
+              >
+                {mins} min
+              </button>
+            ))}
+          </div>
+        </section>
+
+        {/* Buffer Time */}
+        <section>
+          <label className="mb-3 block text-xs font-medium uppercase tracking-[0.15em] text-muted-foreground">
+            Break Between Rounds
+          </label>
+          <div className="flex gap-3">
+            {[3, 5, 7, 10].map((mins) => (
+              <button
+                key={mins}
+                onClick={() => setBufferTime(mins)}
+                className={`flex h-14 flex-1 items-center justify-center rounded-2xl text-sm font-semibold transition-all ${
+                  bufferTime === mins
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "bg-card text-foreground border border-border hover:border-foreground/20"
                 }`}
@@ -189,7 +212,7 @@ export function SetupScreen({ onGenerate }: SetupScreenProps) {
         {/* Generate Button */}
         <div className="pt-2">
           <button
-            onClick={() => onGenerate(players, courts, tournamentDuration, matchDuration)}
+            onClick={() => onGenerate(players, courts, tournamentDuration, matchDuration, bufferTime)}
             disabled={!canGenerate}
             className="w-full rounded-2xl bg-primary py-4 text-base font-semibold text-primary-foreground transition-all hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed"
           >
