@@ -37,8 +37,12 @@ export async function POST(request: Request) {
     const roundCycleTime = matchDuration + BUFFER_TIME
     const totalSlots = Math.floor(tournamentDuration / roundCycleTime)
     
+    console.log("[v0] Calculating rounds:", { tournamentDuration, matchDuration, BUFFER_TIME, roundCycleTime, totalSlots })
+    
     // Generate rounds to fill all available slots
     const rounds = generateFullSchedule(playerNames, courts, totalSlots)
+    
+    console.log("[v0] Saving rounds:", rounds.length)
 
     const tournament = {
       id,
