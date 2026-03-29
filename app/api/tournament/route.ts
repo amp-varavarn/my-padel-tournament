@@ -32,13 +32,17 @@ export async function POST(request: Request) {
       gamesAgainst: 0,
     }))
 
-    // Calculate total slots with 5-minute buffer between rounds
-    const BUFFER_TIME = 5
+    // Calculate total slots with 2-minute buffer between rounds
+    const BUFFER_TIME = 2
     const roundCycleTime = matchDuration + BUFFER_TIME
     const totalSlots = Math.floor(tournamentDuration / roundCycleTime)
     
+    console.log("[v0] Calculating rounds:", { tournamentDuration, matchDuration, BUFFER_TIME, roundCycleTime, totalSlots })
+    
     // Generate rounds to fill all available slots
     const rounds = generateFullSchedule(playerNames, courts, totalSlots)
+    
+    console.log("[v0] Saving rounds:", rounds.length)
 
     const tournament = {
       id,
