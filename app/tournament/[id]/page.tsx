@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react"
 import { useParams, useSearchParams } from "next/navigation"
+import { track } from "@vercel/analytics"
 import { TournamentTabs, type TabId } from "@/components/tournament-tabs"
 import { SchedulePreview } from "@/components/schedule-preview"
 import { ActiveRound } from "@/components/active-round"
@@ -41,6 +42,7 @@ export default function TournamentPage() {
   >({})
 
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const trackedVisitRef = useRef(false)
 
   // Fetch tournament data
   const fetchTournament = useCallback(async () => {
@@ -91,6 +93,16 @@ export default function TournamentPage() {
     }
   }, [data?.isAdmin, fetchTournament, data])
 
+  useEffect(() => {
+    if (!data || trackedVisitRef.current) return
+
+    track("tournament_opened", {
+      tournamentId: id,
+      role: data.isAdmin ? "admin" : "viewer",
+    })
+    trackedVisitRef.current = true
+  }, [data, id])
+
   // PATCH helper for admin mutations
   const patchTournament = useCallback(
     async (updates: Record<string, unknown>) => {
@@ -110,9 +122,14 @@ export default function TournamentPage() {
   // --- Admin handlers ---
 
   const handleStartTournament = useCallback(async () => {
+    track("tournament_started", {
+      tournamentId: id,
+      totalRounds: data?.rounds.length ?? 0,
+      playersCount: data?.players.length ?? 0,
+    })
     await patchTournament({ screen: "active", currentRound: 1 })
     setActiveTab("current")
-  }, [patchTournament])
+  }, [patchTournament, id, data?.rounds.length, data?.players.length])
 
   const handleSubmitScores = useCallback(
     async (
@@ -148,6 +165,13 @@ export default function TournamentPage() {
         screen: "leaderboard",
       })
 
+      track("round_scores_submitted", {
+        tournamentId: id,
+        roundNumber: round.roundNumber,
+        matchesCount: newEntries.length,
+        editedRound: forRound !== undefined,
+      })
+
       // Clear draft scores for this round
       setDraftScores((prev) => {
         const copy = { ...prev }
@@ -158,26 +182,34 @@ export default function TournamentPage() {
       setEditingRound(null)
       setActiveTab("leaderboard")
     },
-    [data, patchTournament]
+    [data, patchTournament, id]
   )
 
   const handleNextRound = useCallback(async () => {
     if (!data) return
+    track("next_round_started", {
+      tournamentId: id,
+      nextRound: data.currentRound + 1,
+    })
     await patchTournament({
       screen: "active",
       currentRound: data.currentRound + 1,
     })
     setActiveTab("current")
-  }, [data, patchTournament])
+  }, [data, patchTournament, id])
 
   const handleNewTournament = useCallback(() => {
     window.location.href = "/"
   }, [])
 
   const handleEditRound = useCallback((roundNumber: number) => {
+    track("round_edit_opened", {
+      tournamentId: id,
+      roundNumber,
+    })
     setEditingRound(roundNumber)
     setActiveTab("current")
-  }, [])
+  }, [id])
 
   // Save draft scores when switching tabs
   const handleSaveDraftScores = useCallback(

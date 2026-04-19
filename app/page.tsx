@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { ArrowRight } from "lucide-react"
+import { track } from "@vercel/analytics"
 
 export default function LandingPage() {
   const router = useRouter()
@@ -16,6 +17,7 @@ export default function LandingPage() {
       return
     }
     setError("")
+    track("viewer_join_attempted", { source: "landing", tournamentId: trimmed })
     router.push(`/tournament/${trimmed}`)
   }
 
@@ -38,7 +40,10 @@ export default function LandingPage() {
 
         {/* Create */}
         <button
-          onClick={() => router.push("/tournament/new")}
+          onClick={() => {
+            track("create_tournament_clicked", { source: "landing" })
+            router.push("/tournament/new")
+          }}
           className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-4 text-base font-semibold text-primary-foreground transition-all hover:opacity-90"
         >
           Create Tournament

@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { SetupScreen } from "@/components/setup-screen"
+import { track } from "@vercel/analytics"
 
 export default function NewTournamentPage() {
   const router = useRouter()
@@ -14,6 +15,12 @@ export default function NewTournamentPage() {
     tournamentDuration: number,
     matchDuration: number
   ) => {
+    track("tournament_create_submitted", {
+      playersCount: players.length,
+      courts,
+      tournamentDuration,
+      matchDuration,
+    })
     setLoading(true)
     try {
       const res = await fetch("/api/tournament", {
@@ -25,8 +32,17 @@ export default function NewTournamentPage() {
       if (!res.ok) throw new Error("Failed to create tournament")
 
       const { id, adminSecret } = await res.json()
+      track("tournament_created", {
+        tournamentId: id,
+        playersCount: players.length,
+        courts,
+      })
       router.push(`/tournament/${id}?admin=${adminSecret}`)
     } catch {
+      track("tournament_create_failed", {
+        playersCount: players.length,
+        courts,
+      })
       setLoading(false)
       alert("Failed to create tournament. Please try again.")
     }

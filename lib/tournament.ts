@@ -130,7 +130,7 @@ export function generateFullSchedule(
   // Create output array with EXACTLY totalSlots rounds
   const rounds: Round[] = new Array(totalSlots)
   
-  let prevMatchKey = ""
+  let prevRoundKey = ""
 
   // STRICT FOR LOOP: runs exactly totalSlots times
   for (let i = 0; i < totalSlots; i++) {
@@ -151,25 +151,79 @@ export function generateFullSchedule(
 
     const numMatchups = matchups.length
     
-    // Use modulo to cycle through matchups when i exceeds unique count
-    let matchupIndex = i % numMatchups
+    // Build matches array (up to one disjoint match per court).
+    // A player can only appear once per round, even with multiple courts.
+    const maxMatches = Math.min(courts, Math.floor(activePlayers.length / 4))
+    const startIndex = i % numMatchups
+    const selectedMatchups:
+      { team1: [string, string]; team2: [string, string] }[] = []
 
-    // Avoid same matchup as previous round if possible
-    if (numMatchups > 1) {
-      const candidateKey = [...matchups[matchupIndex].team1, ...matchups[matchupIndex].team2].sort().join(":")
-      if (candidateKey === prevMatchKey) {
-        matchupIndex = (matchupIndex + 1) % numMatchups
+    // Try different start points to assemble a full disjoint set.
+    // Greedy is sufficient here because valid combinations are dense.
+    for (let attempt = 0; attempt < numMatchups && selectedMatchups.length < maxMatches; attempt++) {
+      const usedPlayers = new Set<string>()
+      const candidate: { team1: [string, string]; team2: [string, string] }[] = []
+
+      for (let step = 0; step < numMatchups; step++) {
+        const idx = (startIndex + attempt + step) % numMatchups
+        const matchup = matchups[idx]
+        const playersInMatch = [
+          matchup.team1[0],
+          matchup.team1[1],
+          matchup.team2[0],
+          matchup.team2[1],
+        ]
+        const hasOverlap = playersInMatch.some((p) => usedPlayers.has(p))
+        if (hasOverlap) continue
+
+        candidate.push(matchup)
+        playersInMatch.forEach((p) => usedPlayers.add(p))
+
+        if (candidate.length === maxMatches) break
+      }
+
+      if (candidate.length > selectedMatchups.length) {
+        selectedMatchups.splice(0, selectedMatchups.length, ...candidate)
       }
     }
 
-    const selectedMatchup = matchups[matchupIndex]
-    prevMatchKey = [...selectedMatchup.team1, ...selectedMatchup.team2].sort().join(":")
+    // Avoid repeating exact same court set in consecutive rounds when possible.
+    const candidateRoundKey = selectedMatchups
+      .map((m) => [...m.team1, ...m.team2].sort().join(":"))
+      .sort()
+      .join("|")
+    if (candidateRoundKey === prevRoundKey && numMatchups > 1) {
+      // One more shifted pass to try a different disjoint combination.
+      const usedPlayers = new Set<string>()
+      const alternative: { team1: [string, string]; team2: [string, string] }[] = []
+      for (let step = 0; step < numMatchups; step++) {
+        const idx = (startIndex + 1 + step) % numMatchups
+        const matchup = matchups[idx]
+        const playersInMatch = [
+          matchup.team1[0],
+          matchup.team1[1],
+          matchup.team2[0],
+          matchup.team2[1],
+        ]
+        const hasOverlap = playersInMatch.some((p) => usedPlayers.has(p))
+        if (hasOverlap) continue
+        alternative.push(matchup)
+        playersInMatch.forEach((p) => usedPlayers.add(p))
+        if (alternative.length === maxMatches) break
+      }
+      if (alternative.length === maxMatches) {
+        selectedMatchups.splice(0, selectedMatchups.length, ...alternative)
+      }
+    }
 
-    // Build matches array (1 match per court, up to available matchups)
+    prevRoundKey = selectedMatchups
+      .map((m) => [...m.team1, ...m.team2].sort().join(":"))
+      .sort()
+      .join("|")
+
     const matches: Match[] = []
-    for (let c = 0; c < courts && c < Math.floor(activePlayers.length / 4); c++) {
-      const idx = (matchupIndex + c) % numMatchups
-      const matchup = matchups[idx]
+    for (let c = 0; c < selectedMatchups.length; c++) {
+      const matchup = selectedMatchups[c]
       matches.push({
         court: c + 1,
         team1: matchup.team1,
